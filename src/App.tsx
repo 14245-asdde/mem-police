@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getWordsForDifficulty } from './data/words';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type GamePhase = 'setup' | 'lobby' | 'playing' | 'review' | 'scoreboard' | 'gameover';
+type GamePhase = 'setup' | 'nickname' | 'lobby' | 'playing' | 'review' | 'scoreboard' | 'gameover';
 
 interface Player {
   id: string;
@@ -115,9 +115,12 @@ export default function App() {
     { id: 0, ...TEAM_PRESETS[0], score: 0 },
     { id: 1, ...TEAM_PRESETS[1], score: 0 },
   ]);
-  const [newPlayerName, setNewPlayerName] = useState('');
-  const [lobbyLink, setLobbyLink]         = useState('');
-  const [linkCopied, setLinkCopied]       = useState(false);
+  const [myNickname, setMyNickname]         = useState('');
+  const [nicknameInput, setNicknameInput]   = useState('');
+  const [nicknameError, setNicknameError]   = useState('');
+  const [myPlayerId]                        = useState(() => Date.now().toString());
+  const [lobbyLink, setLobbyLink]           = useState('');
+  const [linkCopied, setLinkCopied]         = useState(false);
 
   // Playing state
   const [currentTeamIndex, setCurrentTeamIndex]   = useState(0);
@@ -132,13 +135,13 @@ export default function App() {
   const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Generate lobby link when entering lobby
+  // Generate lobby link once when entering nickname screen (lobby creation)
   useEffect(() => {
-    if (phase === 'lobby') {
+    if (phase === 'nickname' && !lobbyLink) {
       const id = Math.random().toString(36).slice(2, 8).toUpperCase();
       setLobbyLink(`${window.location.origin}${window.location.pathname}?lobby=${id}`);
     }
-  }, [phase]);
+  }, [phase, lobbyLink]);
 
   const copyLink = async () => {
     try {
@@ -196,10 +199,17 @@ export default function App() {
     setPlayers(players.map(p => p.teamId === id ? { ...p, teamId: null } : p));
   };
 
-  const addPlayer = () => {
-    if (!newPlayerName.trim()) return;
-    setPlayers([...players, { id: Date.now().toString(), name: newPlayerName.trim(), teamId: null }]);
-    setNewPlayerName('');
+  const confirmNickname = () => {
+    const name = nicknameInput.trim();
+    if (!name) { setNicknameError('Введи имя'); return; }
+    if (name.length < 2) { setNicknameError('Имя слишком короткое'); return; }
+    if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      setNicknameError('Такое имя уже занято');
+      return;
+    }
+    setMyNickname(name);
+    setPlayers(prev => [...prev, { id: myPlayerId, name, teamId: null }]);
+    setPhase('lobby');
   };
 
   const removePlayer = (id: string) => setPlayers(players.filter(p => p.id !== id));
@@ -378,10 +388,69 @@ export default function App() {
             </Card>
 
             <button
-              onClick={() => setPhase('lobby')}
+              onClick={() => setPhase('nickname')}
               className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black text-lg rounded-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/20"
             >
               СОЗДАТЬ ЛОББИ
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  NICKNAME
+  // ═══════════════════════════════════════════
+  if (phase === 'nickname') {
+    return (
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="max-w-sm w-full">
+            <div className="text-center mb-10">
+              <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                КАК ТЕБЯ ЗОВУТ?
+              </h1>
+              <p className="text-white/40 text-sm">
+                Придумай никнейм — изменить потом нельзя
+              </p>
+            </div>
+
+            <Card className="p-6">
+              <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
+                Твой никнейм
+              </div>
+              <input
+                type="text"
+                value={nicknameInput}
+                onChange={e => { setNicknameInput(e.target.value); setNicknameError(''); }}
+                onKeyDown={e => e.key === 'Enter' && confirmNickname()}
+                placeholder="Введи имя..."
+                autoFocus
+                maxLength={20}
+                className={`w-full bg-white/5 border rounded-xl px-4 py-4 text-white placeholder-white/30 focus:outline-none transition text-lg font-bold mb-4 ${
+                  nicknameError ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-yellow-400/60'
+                }`}
+              />
+              {nicknameError && (
+                <div className="text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                  {nicknameError}
+                </div>
+              )}
+              <button
+                onClick={confirmNickname}
+                disabled={!nicknameInput.trim()}
+                className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-black font-black text-lg rounded-2xl transition-all active:scale-95 shadow-lg shadow-orange-500/20 disabled:shadow-none"
+              >
+                ВОЙТИ В ЛОББИ
+              </button>
+            </Card>
+
+            <button
+              onClick={() => setPhase('setup')}
+              className="mt-4 w-full py-3 text-white/40 hover:text-white/70 text-sm transition"
+            >
+              Назад
             </button>
           </div>
         </div>
@@ -436,28 +505,14 @@ export default function App() {
               </p>
             </Card>
 
-            {/* Add player */}
-            <Card className="p-5 mb-4">
-              <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
-                Добавить игрока
+            {/* Current player badge */}
+            <Card className="p-4 mb-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-black text-sm shrink-0">
+                {myNickname.charAt(0).toUpperCase()}
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newPlayerName}
-                  onChange={e => setNewPlayerName(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addPlayer()}
-                  placeholder="Введи имя..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-yellow-400/60 transition"
-                  maxLength={20}
-                />
-                <button
-                  onClick={addPlayer}
-                  disabled={!newPlayerName.trim()}
-                  className="px-6 py-3 bg-yellow-400 hover:bg-yellow-300 disabled:bg-white/10 disabled:text-white/30 text-black font-black rounded-xl transition-all active:scale-95"
-                >
-                  +
-                </button>
+              <div>
+                <div className="text-xs text-white/40 uppercase tracking-widest">Ты играешь как</div>
+                <div className="font-black text-yellow-400">{myNickname}</div>
               </div>
             </Card>
 
