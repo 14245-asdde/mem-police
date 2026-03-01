@@ -17,87 +17,65 @@ interface Team {
   score: number;
 }
 
+interface LobbyState {
+  lobbyId: string;
+  difficulty: Difficulty;
+  timeLimit: number;
+  players: Player[];
+  teams: Team[];
+  phase: GamePhase;
+}
+
 interface WordResult {
   word: string;
   guessed: boolean | null;
 }
 
 const TEAM_PRESETS: { color: string; name: string; accent: string; border: string; bg: string; text: string; btn: string }[] = [
-  {
-    color:  'from-red-500 to-rose-600',
-    name:   'Красные',
-    accent: '#ef4444',
-    border: 'border-red-500',
-    bg:     'bg-red-500/10',
-    text:   'text-red-400',
-    btn:    'bg-red-600 hover:bg-red-500',
-  },
-  {
-    color:  'from-blue-500 to-indigo-600',
-    name:   'Синие',
-    accent: '#3b82f6',
-    border: 'border-blue-500',
-    bg:     'bg-blue-500/10',
-    text:   'text-blue-400',
-    btn:    'bg-blue-600 hover:bg-blue-500',
-  },
-  {
-    color:  'from-emerald-500 to-green-600',
-    name:   'Зелёные',
-    accent: '#10b981',
-    border: 'border-emerald-500',
-    bg:     'bg-emerald-500/10',
-    text:   'text-emerald-400',
-    btn:    'bg-emerald-600 hover:bg-emerald-500',
-  },
-  {
-    color:  'from-amber-400 to-yellow-500',
-    name:   'Жёлтые',
-    accent: '#f59e0b',
-    border: 'border-amber-400',
-    bg:     'bg-amber-400/10',
-    text:   'text-amber-400',
-    btn:    'bg-amber-500 hover:bg-amber-400',
-  },
-  {
-    color:  'from-purple-500 to-violet-600',
-    name:   'Фиолетовые',
-    accent: '#8b5cf6',
-    border: 'border-purple-500',
-    bg:     'bg-purple-500/10',
-    text:   'text-purple-400',
-    btn:    'bg-purple-600 hover:bg-purple-500',
-  },
-  {
-    color:  'from-orange-500 to-red-500',
-    name:   'Оранжевые',
-    accent: '#f97316',
-    border: 'border-orange-500',
-    bg:     'bg-orange-500/10',
-    text:   'text-orange-400',
-    btn:    'bg-orange-600 hover:bg-orange-500',
-  },
+  { color: 'from-red-500 to-rose-600',      name: 'Красные',     accent: '#ef4444', border: 'border-red-500',     bg: 'bg-red-500/10',     text: 'text-red-400',     btn: 'bg-red-600 hover:bg-red-500' },
+  { color: 'from-blue-500 to-indigo-600',   name: 'Синие',       accent: '#3b82f6', border: 'border-blue-500',    bg: 'bg-blue-500/10',    text: 'text-blue-400',    btn: 'bg-blue-600 hover:bg-blue-500' },
+  { color: 'from-emerald-500 to-green-600', name: 'Зелёные',     accent: '#10b981', border: 'border-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-400', btn: 'bg-emerald-600 hover:bg-emerald-500' },
+  { color: 'from-amber-400 to-yellow-500',  name: 'Жёлтые',      accent: '#f59e0b', border: 'border-amber-400',   bg: 'bg-amber-400/10',   text: 'text-amber-400',   btn: 'bg-amber-500 hover:bg-amber-400' },
+  { color: 'from-purple-500 to-violet-600', name: 'Фиолетовые',  accent: '#8b5cf6', border: 'border-purple-500',  bg: 'bg-purple-500/10',  text: 'text-purple-400',  btn: 'bg-purple-600 hover:bg-purple-500' },
+  { color: 'from-orange-500 to-red-500',    name: 'Оранжевые',   accent: '#f97316', border: 'border-orange-500',  bg: 'bg-orange-500/10',  text: 'text-orange-400',  btn: 'bg-orange-600 hover:bg-orange-500' },
 ];
+
+const STORAGE_KEY = (id: string) => `ugadaika_lobby_${id}`;
+
+function saveLobby(state: LobbyState) {
+  localStorage.setItem(STORAGE_KEY(state.lobbyId), JSON.stringify(state));
+  // Trigger storage event for other tabs
+  localStorage.setItem('ugadaika_last_update', Date.now().toString());
+}
+
+function loadLobby(id: string): LobbyState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY(id));
+    if (!raw) return null;
+    return JSON.parse(raw) as LobbyState;
+  } catch {
+    return null;
+  }
+}
+
+function getLobbyIdFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('lobby');
+}
 
 /* ── Shared background layout ── */
 function PageLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen bg-[#0d0d14] text-white overflow-hidden">
-      {/* Blurred colour blobs */}
       <div className="blob w-[500px] h-[500px] bg-purple-600 top-[-120px] left-[-150px]" />
       <div className="blob w-[400px] h-[400px] bg-blue-600 top-[30%] right-[-100px]" />
       <div className="blob w-[350px] h-[350px] bg-pink-600 bottom-[-80px] left-[20%]" />
-      {/* Grid */}
       <div className="absolute inset-0 bg-grid" />
-      {/* Content */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
     </div>
   );
 }
 
-/* ── Glass card ── */
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl ${className}`}>
@@ -107,51 +85,85 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 export default function App() {
+  // Check URL for lobby invite
+  const urlLobbyId = getLobbyIdFromUrl();
+  const isInvited = !!urlLobbyId;
+
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [timeLimit, setTimeLimit]   = useState(60);
-  const [phase, setPhase]           = useState<GamePhase>('setup');
-  const [players, setPlayers]       = useState<Player[]>([]);
-  const [teams, setTeams]           = useState<Team[]>([
+  const [phase, setPhase]           = useState<GamePhase>(() => {
+    if (urlLobbyId) return 'nickname'; // Invited — go straight to nickname
+    return 'setup';
+  });
+
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [teams, setTeams]     = useState<Team[]>([
     { id: 0, ...TEAM_PRESETS[0], score: 0 },
     { id: 1, ...TEAM_PRESETS[1], score: 0 },
   ]);
-  const [myNickname, setMyNickname]         = useState('');
-  const [nicknameInput, setNicknameInput]   = useState('');
-  const [nicknameError, setNicknameError]   = useState('');
-  const [myPlayerId]                        = useState(() => Date.now().toString());
-  const [lobbyLink, setLobbyLink]           = useState('');
-  const [linkCopied, setLinkCopied]         = useState(false);
+
+  const [lobbyId, setLobbyId]                   = useState<string>(() => urlLobbyId || '');
+  const [myNickname, setMyNickname]             = useState('');
+  const [nicknameInput, setNicknameInput]       = useState('');
+  const [nicknameError, setNicknameError]       = useState('');
+  const [myPlayerId]                            = useState(() => `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+  const [linkCopied, setLinkCopied]             = useState(false);
 
   // Playing state
-  const [currentTeamIndex, setCurrentTeamIndex]   = useState(0);
-  const [commanderIndex, setCommanderIndex]         = useState<Record<number, number>>({});
-  const [words, setWords]                           = useState<string[]>([]);
-  const [currentWordIndex, setCurrentWordIndex]     = useState(0);
-  const [roundWords, setRoundWords]                 = useState<WordResult[]>([]);
-  const [timeLeft, setTimeLeft]                     = useState(0);
-  const [isTimerRunning, setIsTimerRunning]         = useState(false);
-  const [skippedInRound, setSkippedInRound]         = useState(0);
+  const [currentTeamIndex, setCurrentTeamIndex]     = useState(0);
+  const [commanderIndex, setCommanderIndex]           = useState<Record<number, number>>({});
+  const [words, setWords]                             = useState<string[]>([]);
+  const [currentWordIndex, setCurrentWordIndex]       = useState(0);
+  const [roundWords, setRoundWords]                   = useState<WordResult[]>([]);
+  const [timeLeft, setTimeLeft]                       = useState(0);
+  const [isTimerRunning, setIsTimerRunning]           = useState(false);
+  const [skippedInRound, setSkippedInRound]           = useState(0);
 
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const syncRef     = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Generate lobby link once when entering nickname screen (lobby creation)
+  const getLobbyLink = () =>
+    `${window.location.origin}${window.location.pathname}?lobby=${lobbyId}`;
+
+  // ── Sync: load lobby from localStorage (for invited players) ──
+  const syncFromStorage = useCallback(() => {
+    if (!lobbyId) return;
+    const saved = loadLobby(lobbyId);
+    if (!saved) return;
+
+    // Only sync lobby-level data (players, teams, phase for non-host)
+    setPlayers(saved.players);
+    setTeams(saved.teams);
+    setDifficulty(saved.difficulty);
+    setTimeLimit(saved.timeLimit);
+
+    // Sync game phase if started
+    if (saved.phase !== 'setup' && saved.phase !== 'nickname') {
+      setPhase(saved.phase);
+    }
+  }, [lobbyId]);
+
+  // Poll localStorage every 500ms for changes
   useEffect(() => {
-    if (phase === 'nickname' && !lobbyLink) {
-      const id = Math.random().toString(36).slice(2, 8).toUpperCase();
-      setLobbyLink(`${window.location.origin}${window.location.pathname}?lobby=${id}`);
-    }
-  }, [phase, lobbyLink]);
+    if (!lobbyId) return;
+    syncRef.current = setInterval(syncFromStorage, 500);
+    return () => { if (syncRef.current) clearInterval(syncRef.current); };
+  }, [lobbyId, syncFromStorage]);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(lobbyLink);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      // fallback
-    }
-  };
+  // Save lobby state whenever players/teams/phase changes (only if we have a lobbyId)
+  useEffect(() => {
+    if (!lobbyId) return;
+    const state: LobbyState = {
+      lobbyId,
+      difficulty,
+      timeLimit,
+      players,
+      teams,
+      phase,
+    };
+    saveLobby(state);
+  }, [lobbyId, players, teams, phase, difficulty, timeLimit]);
 
   const playBeep = useCallback((frequency = 800, duration = 200) => {
     try {
@@ -187,36 +199,83 @@ export default function App() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isTimerRunning, playBeep]);
 
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getLobbyLink());
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
   const addTeam = () => {
     if (teams.length >= 6) return;
     const idx = teams.length;
-    setTeams([...teams, { id: idx, ...TEAM_PRESETS[idx], score: 0 }]);
+    setTeams(prev => [...prev, { id: Date.now(), ...TEAM_PRESETS[idx % TEAM_PRESETS.length], score: 0 }]);
   };
 
   const removeTeam = (id: number) => {
     if (teams.length <= 2) return;
-    setTeams(teams.filter(t => t.id !== id));
-    setPlayers(players.map(p => p.teamId === id ? { ...p, teamId: null } : p));
+    setTeams(prev => prev.filter(t => t.id !== id));
+    setPlayers(prev => prev.map(p => p.teamId === id ? { ...p, teamId: null } : p));
   };
 
+  // ── CONFIRM NICKNAME ──
   const confirmNickname = () => {
     const name = nicknameInput.trim();
     if (!name) { setNicknameError('Введи имя'); return; }
     if (name.length < 2) { setNicknameError('Имя слишком короткое'); return; }
-    if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-      setNicknameError('Такое имя уже занято');
-      return;
+
+    if (isInvited && urlLobbyId) {
+      // Load current lobby state first
+      const saved = loadLobby(urlLobbyId);
+      if (!saved) {
+        setNicknameError('Лобби не найдено. Попроси у друга новую ссылку.');
+        return;
+      }
+      if (saved.players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        setNicknameError('Такое имя уже занято');
+        return;
+      }
+      // Join the existing lobby
+      setLobbyId(urlLobbyId);
+      setDifficulty(saved.difficulty);
+      setTimeLimit(saved.timeLimit);
+      const newPlayer: Player = { id: myPlayerId, name, teamId: null };
+      const updatedPlayers = [...saved.players, newPlayer];
+      const updatedState: LobbyState = { ...saved, players: updatedPlayers };
+      localStorage.setItem(STORAGE_KEY(urlLobbyId), JSON.stringify(updatedState));
+      localStorage.setItem('ugadaika_last_update', Date.now().toString());
+      setPlayers(updatedPlayers);
+      setTeams(saved.teams);
+      setMyNickname(name);
+      setPhase('lobby');
+    } else {
+      // Host: create new lobby
+      if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        setNicknameError('Такое имя уже занято');
+        return;
+      }
+      const newId = Math.random().toString(36).slice(2, 8).toUpperCase();
+      setLobbyId(newId);
+      const newPlayer: Player = { id: myPlayerId, name, teamId: null };
+      setPlayers([newPlayer]);
+      setMyNickname(name);
+
+      // Update browser URL without reload
+      const newUrl = `${window.location.pathname}?lobby=${newId}`;
+      window.history.replaceState({}, '', newUrl);
+
+      setPhase('lobby');
     }
-    setMyNickname(name);
-    setPlayers(prev => [...prev, { id: myPlayerId, name, teamId: null }]);
-    setPhase('lobby');
   };
 
   const assignTeam = (playerId: string, teamId: number | null) =>
     setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, teamId } : p));
 
   const getTeamPlayers = (teamId: number) => players.filter(p => p.teamId === teamId);
-  const getObservers   = ()                => players.filter(p => p.teamId === null);
+  const getObservers   = ()               => players.filter(p => p.teamId === null);
 
   const canStartGame = () => {
     const active = teams.filter(t => getTeamPlayers(t.id).length > 0);
@@ -227,11 +286,9 @@ export default function App() {
   const startGame = () => {
     const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
     setTeams(activeTeams.map(t => ({ ...t, score: 0 })));
-
     const cmdIdx: Record<number, number> = {};
     activeTeams.forEach(t => { cmdIdx[t.id] = 0; });
     setCommanderIndex(cmdIdx);
-
     const wordPool = getWordsForDifficulty(difficulty);
     setWords(wordPool);
     setCurrentWordIndex(0);
@@ -305,8 +362,13 @@ export default function App() {
   const allReviewed = roundWords.every(w => w.guessed !== null);
 
   const resetGame = () => {
+    if (lobbyId) localStorage.removeItem(STORAGE_KEY(lobbyId));
+    window.history.replaceState({}, '', window.location.pathname);
     setPhase('setup');
     setPlayers([]);
+    setLobbyId('');
+    setMyNickname('');
+    setNicknameInput('');
     setTeams([
       { id: 0, ...TEAM_PRESETS[0], score: 0 },
       { id: 1, ...TEAM_PRESETS[1], score: 0 },
@@ -325,7 +387,6 @@ export default function App() {
       <PageLayout>
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <div className="max-w-md w-full">
-            {/* Logo */}
             <div className="text-center mb-10">
               <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-400 bg-clip-text text-transparent">
                 УГАДАЙКА
@@ -335,16 +396,13 @@ export default function App() {
               </p>
             </div>
 
-            {/* Difficulty */}
             <Card className="p-6 mb-4">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-white/50 mb-4">
-                Сложность
-              </h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-white/50 mb-4">Сложность</h2>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { key: 'easy'   as Difficulty, label: 'Лёгкая',  desc: 'Частые слова' },
-                  { key: 'medium' as Difficulty, label: 'Средняя', desc: 'Посложнее'    },
-                  { key: 'hard'   as Difficulty, label: 'Сложная', desc: 'Для знатоков' },
+                  { key: 'easy'   as Difficulty, label: 'Лёгкая',  desc: 'Частые слова'  },
+                  { key: 'medium' as Difficulty, label: 'Средняя', desc: 'Посложнее'     },
+                  { key: 'hard'   as Difficulty, label: 'Сложная', desc: 'Для знатоков'  },
                 ]).map(d => (
                   <button
                     key={d.key}
@@ -362,26 +420,18 @@ export default function App() {
               </div>
             </Card>
 
-            {/* Timer */}
             <Card className="p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold uppercase tracking-widest text-white/50">
-                  Время раунда
-                </h2>
+                <h2 className="text-sm font-bold uppercase tracking-widest text-white/50">Время раунда</h2>
                 <span className="font-mono font-black text-yellow-400 text-xl">{timeLimit}с</span>
               </div>
               <input
-                type="range"
-                min={20}
-                max={180}
-                step={5}
-                value={timeLimit}
+                type="range" min={20} max={180} step={5} value={timeLimit}
                 onChange={e => setTimeLimit(Number(e.target.value))}
                 className="w-full cursor-pointer"
               />
               <div className="flex justify-between text-[11px] text-white/30 mt-2">
-                <span>20с</span>
-                <span>180с</span>
+                <span>20с</span><span>180с</span>
               </div>
             </Card>
 
@@ -410,14 +460,21 @@ export default function App() {
                 КАК ТЕБЯ ЗОВУТ?
               </h1>
               <p className="text-white/40 text-sm">
-                Придумай никнейм — изменить потом нельзя
+                {isInvited
+                  ? 'Тебя пригласили в лобби — введи своё имя'
+                  : 'Придумай никнейм — изменить потом нельзя'}
               </p>
             </div>
 
-            <Card className="p-6">
-              <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
-                Твой никнейм
+            {isInvited && (
+              <div className="mb-4 bg-green-500/10 border border-green-500/30 rounded-2xl px-5 py-4 text-center">
+                <div className="text-green-400 font-bold text-sm mb-1">Приглашение в лобби</div>
+                <div className="text-white/50 text-xs">Введи имя и нажми войти — ты попадёшь к друзьям</div>
               </div>
+            )}
+
+            <Card className="p-6">
+              <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">Твой никнейм</div>
               <input
                 type="text"
                 value={nicknameInput}
@@ -440,16 +497,18 @@ export default function App() {
                 disabled={!nicknameInput.trim()}
                 className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-black font-black text-lg rounded-2xl transition-all active:scale-95 shadow-lg shadow-orange-500/20 disabled:shadow-none"
               >
-                ВОЙТИ В ЛОББИ
+                {isInvited ? 'ВОЙТИ В ЛОББИ' : 'ВОЙТИ В ЛОББИ'}
               </button>
             </Card>
 
-            <button
-              onClick={() => setPhase('setup')}
-              className="mt-4 w-full py-3 text-white/40 hover:text-white/70 text-sm transition"
-            >
-              Назад
-            </button>
+            {!isInvited && (
+              <button
+                onClick={() => setPhase('setup')}
+                className="mt-4 w-full py-3 text-white/40 hover:text-white/70 text-sm transition"
+              >
+                Назад
+              </button>
+            )}
           </div>
         </div>
       </PageLayout>
@@ -460,10 +519,14 @@ export default function App() {
   //  LOBBY
   // ═══════════════════════════════════════════
   if (phase === 'lobby') {
+    const myPlayer = players.find(p => p.id === myPlayerId);
+    const isHost   = !isInvited || players[0]?.id === myPlayerId;
+
     return (
       <PageLayout>
         <div className="p-4 pb-8">
           <div className="max-w-2xl mx-auto">
+
             {/* Header */}
             <div className="text-center py-6">
               <h1 className="text-3xl font-black bg-gradient-to-r from-yellow-300 to-pink-400 bg-clip-text text-transparent">
@@ -472,20 +535,22 @@ export default function App() {
               <div className="flex justify-center gap-4 mt-2 text-xs text-white/40">
                 <span>{timeLimit}с</span>
                 <span>·</span>
-                <span>
-                  {difficulty === 'easy' ? 'Лёгкая' : difficulty === 'medium' ? 'Средняя' : 'Сложная'}
-                </span>
+                <span>{difficulty === 'easy' ? 'Лёгкая' : difficulty === 'medium' ? 'Средняя' : 'Сложная'}</span>
               </div>
             </div>
 
-            {/* Lobby link */}
+            {/* Invite link */}
             <Card className="p-5 mb-4">
               <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
-                Ссылка на лобби
+                Ссылка-приглашение
               </div>
               <div className="flex gap-2">
-                <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-mono text-sm text-white/70 truncate select-all">
-                  {lobbyLink}
+                <div
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-mono text-sm text-white/70 truncate cursor-pointer select-all"
+                  onClick={copyLink}
+                  title="Нажми чтобы скопировать"
+                >
+                  {getLobbyLink()}
                 </div>
                 <button
                   onClick={copyLink}
@@ -499,7 +564,7 @@ export default function App() {
                 </button>
               </div>
               <p className="text-[11px] text-white/30 mt-2">
-                Отправь эту ссылку друзьям — они попадут в то же лобби
+                Скопируй ссылку и отправь друзьям — они введут имя и попадут сюда
               </p>
             </Card>
 
@@ -508,9 +573,12 @@ export default function App() {
               <div className="w-9 h-9 rounded-full bg-yellow-400/20 border border-yellow-400/40 flex items-center justify-center text-yellow-400 font-black text-sm shrink-0">
                 {myNickname.charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div className="flex-1">
                 <div className="text-xs text-white/40 uppercase tracking-widest">Ты играешь как</div>
                 <div className="font-black text-yellow-400">{myNickname}</div>
+              </div>
+              <div className="text-xs text-white/30">
+                {players.length} в лобби
               </div>
             </Card>
 
@@ -523,7 +591,9 @@ export default function App() {
                 <div className="flex flex-wrap gap-2">
                   {getObservers().map(obs => (
                     <div key={obs.id} className="bg-white/8 border border-white/10 rounded-xl px-3 py-2 text-sm flex items-center gap-2">
-                      <span className="text-white/80">{obs.name}</span>
+                      <span className={`text-white/80 ${obs.id === myPlayerId ? 'text-yellow-400 font-bold' : ''}`}>
+                        {obs.name}
+                      </span>
                       <div className="flex gap-1">
                         {teams.map(t => {
                           const tp = getTeamPreset(t);
@@ -532,7 +602,7 @@ export default function App() {
                               key={t.id}
                               onClick={() => assignTeam(obs.id, t.id)}
                               title={`В команду ${t.name}`}
-                              className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 active:scale-95`}
+                              className="w-5 h-5 rounded-full border-2 transition-all hover:scale-110 active:scale-95"
                               style={{ background: tp.accent, borderColor: tp.accent }}
                             />
                           );
@@ -547,27 +617,20 @@ export default function App() {
             {/* Teams */}
             <div className="space-y-3 mb-4">
               {teams.map((team) => {
-                const p = getTeamPreset(team);
-                const tp = getTeamPlayers(team.id);
-                const tooFew = tp.length > 0 && tp.length < 2;
+                const p         = getTeamPreset(team);
+                const tp        = getTeamPlayers(team.id);
+                const tooFew    = tp.length > 0 && tp.length < 2;
                 const otherTeams = teams.filter(t => t.id !== team.id);
+
                 return (
-                  <div
-                    key={team.id}
-                    className={`rounded-2xl p-5 border-2 transition-all ${p.bg} ${p.border}`}
-                  >
+                  <div key={team.id} className={`rounded-2xl p-5 border-2 transition-all ${p.bg} ${p.border}`}>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className={`font-black text-base flex items-center gap-2 ${p.text}`}>
-                        <span
-                          className="inline-block w-3 h-3 rounded-full"
-                          style={{ background: p.accent }}
-                        />
+                        <span className="inline-block w-3 h-3 rounded-full" style={{ background: p.accent }} />
                         {team.name}
-                        <span className="text-xs text-white/30 font-normal">
-                          {tp.length} игр.
-                        </span>
+                        <span className="text-xs text-white/30 font-normal">{tp.length} игр.</span>
                       </h3>
-                      {teams.length > 2 && (
+                      {isHost && teams.length > 2 && (
                         <button
                           onClick={() => removeTeam(team.id)}
                           className="text-white/30 hover:text-red-400 text-xs transition"
@@ -583,39 +646,41 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Team members — с кнопками перехода */}
+                    {/* Team members */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {tp.map(pl => (
                         <div key={pl.id} className="bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm flex items-center gap-2">
-                          <span className="text-white/90">{pl.name}</span>
-                          {/* Переход в другую команду */}
-                          <div className="flex gap-1 items-center">
-                            {otherTeams.map(ot => {
-                              const otp = getTeamPreset(ot);
-                              return (
-                                <button
-                                  key={ot.id}
-                                  onClick={() => assignTeam(pl.id, ot.id)}
-                                  title={`Перейти в ${ot.name}`}
-                                  className="w-4 h-4 rounded-full border-2 transition-all hover:scale-125 active:scale-90 opacity-60 hover:opacity-100"
-                                  style={{ background: otp.accent, borderColor: otp.accent }}
-                                />
-                              );
-                            })}
-                            {/* В наблюдатели */}
-                            <button
-                              onClick={() => assignTeam(pl.id, null)}
-                              title="В наблюдатели"
-                              className="w-4 h-4 rounded-full border-2 border-white/30 bg-white/10 hover:bg-white/25 transition-all hover:scale-125 active:scale-90 opacity-50 hover:opacity-100 text-[8px] flex items-center justify-center text-white"
-                            >
-                              ×
-                            </button>
-                          </div>
+                          <span className={`${pl.id === myPlayerId ? 'text-yellow-400 font-bold' : 'text-white/90'}`}>
+                            {pl.name}
+                          </span>
+                          {pl.id === myPlayerId && (
+                            <div className="flex gap-1 items-center">
+                              {otherTeams.map(ot => {
+                                const otp = getTeamPreset(ot);
+                                return (
+                                  <button
+                                    key={ot.id}
+                                    onClick={() => assignTeam(pl.id, ot.id)}
+                                    title={`Перейти в ${ot.name}`}
+                                    className="w-4 h-4 rounded-full border-2 transition-all hover:scale-125 active:scale-90 opacity-60 hover:opacity-100"
+                                    style={{ background: otp.accent, borderColor: otp.accent }}
+                                  />
+                                );
+                              })}
+                              <button
+                                onClick={() => assignTeam(pl.id, null)}
+                                title="В наблюдатели"
+                                className="w-4 h-4 rounded-full border-2 border-white/30 bg-white/10 hover:bg-white/25 transition-all hover:scale-125 active:scale-90 text-[8px] flex items-center justify-center text-white"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
 
-                    {/* + Добавить наблюдателя */}
+                    {/* Add from observers */}
                     {getObservers().length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {getObservers().map(pl => (
@@ -635,7 +700,7 @@ export default function App() {
             </div>
 
             {/* Add team */}
-            {teams.length < 6 && (
+            {isHost && teams.length < 6 && (
               <button
                 onClick={addTeam}
                 className="w-full py-3 border border-dashed border-white/15 rounded-2xl text-white/40 hover:border-white/25 hover:text-white/60 transition-all mb-5 flex items-center justify-center gap-2 text-sm"
@@ -644,13 +709,16 @@ export default function App() {
               </button>
             )}
 
+            {/* Start button — visible to all but only host can actually start */}
             <div className="flex gap-3">
-              <button
-                onClick={() => setPhase('setup')}
-                className="px-5 py-4 bg-white/8 hover:bg-white/12 rounded-2xl font-bold transition-all text-sm"
-              >
-                Назад
-              </button>
+              {!isInvited && (
+                <button
+                  onClick={() => { resetGame(); }}
+                  className="px-5 py-4 bg-white/8 hover:bg-white/12 rounded-2xl font-bold transition-all text-sm"
+                >
+                  Назад
+                </button>
+              )}
               <button
                 onClick={startGame}
                 disabled={!canStartGame()}
@@ -659,6 +727,12 @@ export default function App() {
                 {canStartGame() ? 'НАЧАТЬ ИГРУ' : 'Нужно минимум 2 команды по 2 игрока'}
               </button>
             </div>
+
+            {myPlayer && (
+              <p className="text-center text-xs text-white/20 mt-4">
+                Нажми на цветной кружок рядом со своим именем чтобы перейти в команду
+              </p>
+            )}
           </div>
         </div>
       </PageLayout>
@@ -679,12 +753,9 @@ export default function App() {
         <div className="flex flex-col min-h-screen p-4">
           <div className="max-w-lg mx-auto w-full flex-1 flex flex-col py-6">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-black tracking-wide text-white/80 uppercase">
-                Табло
-              </h1>
+              <h1 className="text-2xl font-black tracking-wide text-white/80 uppercase">Табло</h1>
             </div>
 
-            {/* Scores */}
             <div className="space-y-3 mb-8 flex-1">
               {activeTeams.map(team => {
                 const p         = getTeamPreset(team);
@@ -694,9 +765,7 @@ export default function App() {
                   <div
                     key={team.id}
                     className={`rounded-2xl p-4 border-2 transition-all ${
-                      isCurrent
-                        ? `${p.bg} ${p.border} shadow-lg`
-                        : 'bg-white/5 border-white/10'
+                      isCurrent ? `${p.bg} ${p.border} shadow-lg` : 'bg-white/5 border-white/10'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -722,7 +791,6 @@ export default function App() {
               })}
             </div>
 
-            {/* Current turn */}
             {currentTeam && commander && (
               <Card className="p-6 mb-6 text-center">
                 <div className="text-xs uppercase tracking-widest text-white/40 mb-3">Сейчас ходят</div>
@@ -767,13 +835,10 @@ export default function App() {
         <div className="flex flex-col min-h-screen p-4">
           <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
 
-            {/* Timer bar */}
             <div className="pt-4 pb-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 text-sm">
-                  {currentTeam && (
-                    <span className="font-bold" style={{ color: p.accent }}>{currentTeam.name}</span>
-                  )}
+                  {currentTeam && <span className="font-bold" style={{ color: p.accent }}>{currentTeam.name}</span>}
                   <span className="text-white/30">·</span>
                   <span className="text-white/60">{commander?.name}</span>
                 </div>
@@ -796,7 +861,6 @@ export default function App() {
               Слово #{roundWords.length + 1} &nbsp;·&nbsp; Пропущено: {skippedInRound}
             </div>
 
-            {/* Word card */}
             <div className="flex-1 flex flex-col items-center justify-center">
               <Card className="w-full p-10 text-center border-white/15 mb-6">
                 <div className="text-[11px] uppercase tracking-widest text-white/30 mb-6">
@@ -811,12 +875,9 @@ export default function App() {
               </Card>
             </div>
 
-            {/* Past words */}
             {roundWords.length > 0 && (
               <div className="mb-4 max-h-28 overflow-y-auto">
-                <div className="text-[11px] text-white/30 mb-1.5 uppercase tracking-widest">
-                  Прошедшие слова
-                </div>
+                <div className="text-[11px] text-white/30 mb-1.5 uppercase tracking-widest">Прошедшие слова</div>
                 <div className="flex flex-wrap gap-1.5">
                   {roundWords.map((w, i) => (
                     <span
@@ -834,7 +895,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Buttons */}
             <div className="grid grid-cols-2 gap-3 pb-4">
               <button
                 onClick={skipWord}
@@ -846,7 +906,7 @@ export default function App() {
                 onClick={nextWord}
                 className="py-5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 rounded-2xl font-black text-base transition-all active:scale-95 text-white shadow-lg shadow-green-500/20"
               >
-                Угадали
+                Следующее слово
               </button>
             </div>
           </div>
@@ -873,9 +933,7 @@ export default function App() {
                 <span className="text-red-400 font-black text-lg tracking-wide">ВРЕМЯ ВЫШЛО</span>
               </div>
               {currentTeam && (
-                <div className="font-bold" style={{ color: p.accent }}>
-                  {currentTeam.name} — проверка
-                </div>
+                <div className="font-bold" style={{ color: p.accent }}>{currentTeam.name} — проверка</div>
               )}
             </div>
 
@@ -942,7 +1000,7 @@ export default function App() {
   }
 
   // ═══════════════════════════════════════════
-  //  GAME OVER (manual reset only, no win condition)
+  //  GAME OVER
   // ═══════════════════════════════════════════
   if (phase === 'gameover') {
     const sorted = [...teams].sort((a, b) => b.score - a.score);
@@ -958,9 +1016,7 @@ export default function App() {
             </div>
             {winner && (
               <div className="mb-8">
-                <div className="text-2xl font-black mb-1" style={{ color: p.accent }}>
-                  {winner.name}
-                </div>
+                <div className="text-2xl font-black mb-1" style={{ color: p.accent }}>{winner.name}</div>
                 <div className="text-5xl font-black text-yellow-400">{winner.score}</div>
                 <div className="text-white/30 text-sm">очков</div>
               </div>
