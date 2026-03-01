@@ -213,7 +213,7 @@ export default function App() {
   };
 
   const assignTeam = (playerId: string, teamId: number | null) =>
-    setPlayers(players.map(p => p.id === playerId ? { ...p, teamId } : p));
+    setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, teamId } : p));
 
   const getTeamPlayers = (teamId: number) => players.filter(p => p.teamId === teamId);
   const getObservers   = ()                => players.filter(p => p.teamId === null);
@@ -521,9 +521,23 @@ export default function App() {
                   Наблюдатели ({getObservers().length})
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {getObservers().map(p => (
-                    <div key={p.id} className="bg-white/8 border border-white/10 rounded-xl px-3 py-2 text-sm">
-                      <span>{p.name}</span>
+                  {getObservers().map(obs => (
+                    <div key={obs.id} className="bg-white/8 border border-white/10 rounded-xl px-3 py-2 text-sm flex items-center gap-2">
+                      <span className="text-white/80">{obs.name}</span>
+                      <div className="flex gap-1">
+                        {teams.map(t => {
+                          const tp = getTeamPreset(t);
+                          return (
+                            <button
+                              key={t.id}
+                              onClick={() => assignTeam(obs.id, t.id)}
+                              title={`В команду ${t.name}`}
+                              className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 active:scale-95`}
+                              style={{ background: tp.accent, borderColor: tp.accent }}
+                            />
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -536,6 +550,7 @@ export default function App() {
                 const p = getTeamPreset(team);
                 const tp = getTeamPlayers(team.id);
                 const tooFew = tp.length > 0 && tp.length < 2;
+                const otherTeams = teams.filter(t => t.id !== team.id);
                 return (
                   <div
                     key={team.id}
@@ -568,16 +583,39 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Team members */}
+                    {/* Team members — с кнопками перехода */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {tp.map(pl => (
-                        <div key={pl.id} className="bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 text-sm">
-                          <span>{pl.name}</span>
+                        <div key={pl.id} className="bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-sm flex items-center gap-2">
+                          <span className="text-white/90">{pl.name}</span>
+                          {/* Переход в другую команду */}
+                          <div className="flex gap-1 items-center">
+                            {otherTeams.map(ot => {
+                              const otp = getTeamPreset(ot);
+                              return (
+                                <button
+                                  key={ot.id}
+                                  onClick={() => assignTeam(pl.id, ot.id)}
+                                  title={`Перейти в ${ot.name}`}
+                                  className="w-4 h-4 rounded-full border-2 transition-all hover:scale-125 active:scale-90 opacity-60 hover:opacity-100"
+                                  style={{ background: otp.accent, borderColor: otp.accent }}
+                                />
+                              );
+                            })}
+                            {/* В наблюдатели */}
+                            <button
+                              onClick={() => assignTeam(pl.id, null)}
+                              title="В наблюдатели"
+                              className="w-4 h-4 rounded-full border-2 border-white/30 bg-white/10 hover:bg-white/25 transition-all hover:scale-125 active:scale-90 opacity-50 hover:opacity-100 text-[8px] flex items-center justify-center text-white"
+                            >
+                              ×
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
 
-                    {/* Add from observers */}
+                    {/* + Добавить наблюдателя */}
                     {getObservers().length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {getObservers().map(pl => (
