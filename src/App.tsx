@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getWordsForDifficulty } from './data/words';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type GamePhase = 'setup' | 'nickname' | 'lobby' | 'playing' | 'review' | 'scoreboard' | 'gameover';
+type GamePhase = 'setup' | 'nickname' | 'waiting' | 'lobby' | 'playing' | 'review' | 'scoreboard' | 'gameover';
 
 interface Player {
   id: string;
@@ -92,7 +92,8 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [timeLimit, setTimeLimit]   = useState(60);
   const [phase, setPhase]           = useState<GamePhase>(() => {
-    if (urlLobbyId) return 'nickname'; // Invited — go straight to nickname
+    if (urlLobbyId && loadLobby(urlLobbyId)) return 'nickname';
+    if (urlLobbyId) return 'waiting'; // Invited but lobby not ready yet
     return 'setup';
   });
 
@@ -150,6 +151,20 @@ export default function App() {
     syncRef.current = setInterval(syncFromStorage, 500);
     return () => { if (syncRef.current) clearInterval(syncRef.current); };
   }, [lobbyId, syncFromStorage]);
+
+  // If invited but lobby doesn't exist yet — poll until it appears
+  useEffect(() => {
+    if (!isInvited || !urlLobbyId) return;
+    if (phase !== 'waiting') return;
+    const interval = setInterval(() => {
+      const saved = loadLobby(urlLobbyId);
+      if (saved) {
+        clearInterval(interval);
+        setPhase('nickname');
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isInvited, urlLobbyId, phase]);
 
   // Save lobby state whenever players/teams/phase changes (only if we have a lobbyId)
   useEffect(() => {
@@ -258,8 +273,23 @@ export default function App() {
         return;
       }
       const newId = Math.random().toString(36).slice(2, 8).toUpperCase();
-      setLobbyId(newId);
       const newPlayer: Player = { id: myPlayerId, name, teamId: null };
+
+      // Save lobby to localStorage immediately so invited players can find it
+      const initialState: LobbyState = {
+        lobbyId: newId,
+        difficulty,
+        timeLimit,
+        players: [newPlayer],
+        teams: [
+          { id: 0, ...TEAM_PRESETS[0], score: 0 },
+          { id: 1, ...TEAM_PRESETS[1], score: 0 },
+        ],
+        phase: 'lobby',
+      };
+      saveLobby(initialState);
+
+      setLobbyId(newId);
       setPlayers([newPlayer]);
       setMyNickname(name);
 
@@ -440,6 +470,44 @@ export default function App() {
               className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black text-lg rounded-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/20"
             >
               СОЗДАТЬ ЛОББИ
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  WAITING (invited but lobby not created yet)
+  // ═══════════════════════════════════════════
+  if (phase === 'waiting') {
+    return (
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="max-w-sm w-full text-center">
+            <div className="mb-8">
+              <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-3">
+                УГАДАЙКА
+              </h1>
+              <p className="text-white/40 text-sm">Тебя пригласили в лобби</p>
+            </div>
+            <Card className="p-8">
+              <div className="flex justify-center mb-5">
+                <div className="w-12 h-12 border-4 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" />
+              </div>
+              <div className="font-bold text-white/80 mb-2">Ждём создания лобби...</div>
+              <div className="text-sm text-white/40">
+                Как только друг откроет лобби — ты автоматически попадёшь туда
+              </div>
+            </Card>
+            <button
+              onClick={() => {
+                window.history.replaceState({}, '', window.location.pathname);
+                setPhase('setup');
+              }}
+              className="mt-6 text-white/30 hover:text-white/60 text-sm transition"
+            >
+              Создать своё лобби
             </button>
           </div>
         </div>
