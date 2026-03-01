@@ -1,1 +1,51 @@
 @import "tailwindcss";
+
+/* Grid overlay */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Glow blobs */
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+/* Range input */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.1);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #facc15;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(250,204,21,0.5);
+  transition: transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+input[type=range]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #facc15;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 10px rgba(250,204,21,0.5);
+}

@@ -15,100 +15,157 @@ interface Team {
   color: string;
   name: string;
   score: number;
-  emoji: string;
 }
 
 interface WordResult {
   word: string;
-  guessed: boolean | null; // null = not reviewed yet
+  guessed: boolean | null;
 }
 
-const TEAM_PRESETS: { color: string; name: string; emoji: string }[] = [
-  { color: 'from-red-500 to-rose-600', name: 'Красные', emoji: '🔴' },
-  { color: 'from-blue-500 to-indigo-600', name: 'Синие', emoji: '🔵' },
-  { color: 'from-green-500 to-emerald-600', name: 'Зелёные', emoji: '🟢' },
-  { color: 'from-yellow-500 to-amber-600', name: 'Жёлтые', emoji: '🟡' },
-  { color: 'from-purple-500 to-violet-600', name: 'Фиолетовые', emoji: '🟣' },
-  { color: 'from-orange-500 to-red-500', name: 'Оранжевые', emoji: '🟠' },
+const TEAM_PRESETS: { color: string; name: string; accent: string; border: string; bg: string; text: string; btn: string }[] = [
+  {
+    color:  'from-red-500 to-rose-600',
+    name:   'Красные',
+    accent: '#ef4444',
+    border: 'border-red-500',
+    bg:     'bg-red-500/10',
+    text:   'text-red-400',
+    btn:    'bg-red-600 hover:bg-red-500',
+  },
+  {
+    color:  'from-blue-500 to-indigo-600',
+    name:   'Синие',
+    accent: '#3b82f6',
+    border: 'border-blue-500',
+    bg:     'bg-blue-500/10',
+    text:   'text-blue-400',
+    btn:    'bg-blue-600 hover:bg-blue-500',
+  },
+  {
+    color:  'from-emerald-500 to-green-600',
+    name:   'Зелёные',
+    accent: '#10b981',
+    border: 'border-emerald-500',
+    bg:     'bg-emerald-500/10',
+    text:   'text-emerald-400',
+    btn:    'bg-emerald-600 hover:bg-emerald-500',
+  },
+  {
+    color:  'from-amber-400 to-yellow-500',
+    name:   'Жёлтые',
+    accent: '#f59e0b',
+    border: 'border-amber-400',
+    bg:     'bg-amber-400/10',
+    text:   'text-amber-400',
+    btn:    'bg-amber-500 hover:bg-amber-400',
+  },
+  {
+    color:  'from-purple-500 to-violet-600',
+    name:   'Фиолетовые',
+    accent: '#8b5cf6',
+    border: 'border-purple-500',
+    bg:     'bg-purple-500/10',
+    text:   'text-purple-400',
+    btn:    'bg-purple-600 hover:bg-purple-500',
+  },
+  {
+    color:  'from-orange-500 to-red-500',
+    name:   'Оранжевые',
+    accent: '#f97316',
+    border: 'border-orange-500',
+    bg:     'bg-orange-500/10',
+    text:   'text-orange-400',
+    btn:    'bg-orange-600 hover:bg-orange-500',
+  },
 ];
 
-const TEAM_BG: string[] = [
-  'bg-red-500/20 border-red-500',
-  'bg-blue-500/20 border-blue-500',
-  'bg-green-500/20 border-green-500',
-  'bg-yellow-500/20 border-yellow-500',
-  'bg-purple-500/20 border-purple-500',
-  'bg-orange-500/20 border-orange-500',
-];
+/* ── Shared background layout ── */
+function PageLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative min-h-screen bg-[#0d0d14] text-white overflow-hidden">
+      {/* Blurred colour blobs */}
+      <div className="blob w-[500px] h-[500px] bg-purple-600 top-[-120px] left-[-150px]" />
+      <div className="blob w-[400px] h-[400px] bg-blue-600 top-[30%] right-[-100px]" />
+      <div className="blob w-[350px] h-[350px] bg-pink-600 bottom-[-80px] left-[20%]" />
+      {/* Grid */}
+      <div className="absolute inset-0 bg-grid" />
+      {/* Content */}
+      <div className="relative z-10">
+        {children}
+      </div>
+    </div>
+  );
+}
 
-const TEAM_TEXT: string[] = [
-  'text-red-400',
-  'text-blue-400',
-  'text-green-400',
-  'text-yellow-400',
-  'text-purple-400',
-  'text-orange-400',
-];
-
-const TEAM_BTN: string[] = [
-  'bg-red-600 hover:bg-red-700',
-  'bg-blue-600 hover:bg-blue-700',
-  'bg-green-600 hover:bg-green-700',
-  'bg-yellow-600 hover:bg-yellow-700',
-  'bg-purple-600 hover:bg-purple-700',
-  'bg-orange-600 hover:bg-orange-700',
-];
+/* ── Glass card ── */
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl ${className}`}>
+      {children}
+    </div>
+  );
+}
 
 export default function App() {
-  // Setup state
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
-  const [timeLimit, setTimeLimit] = useState(60);
-  const [winScore, setWinScore] = useState(30);
-  
-  // Game state
-  const [phase, setPhase] = useState<GamePhase>('setup');
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [teams, setTeams] = useState<Team[]>([
+  const [timeLimit, setTimeLimit]   = useState(60);
+  const [phase, setPhase]           = useState<GamePhase>('setup');
+  const [players, setPlayers]       = useState<Player[]>([]);
+  const [teams, setTeams]           = useState<Team[]>([
     { id: 0, ...TEAM_PRESETS[0], score: 0 },
     { id: 1, ...TEAM_PRESETS[1], score: 0 },
   ]);
   const [newPlayerName, setNewPlayerName] = useState('');
-  
+  const [lobbyLink, setLobbyLink]         = useState('');
+  const [linkCopied, setLinkCopied]       = useState(false);
+
   // Playing state
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
-  const [commanderIndex, setCommanderIndex] = useState<Record<number, number>>({});
-  const [words, setWords] = useState<string[]>([]);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [roundWords, setRoundWords] = useState<WordResult[]>([]);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [skippedInRound, setSkippedInRound] = useState(0);
-  
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [currentTeamIndex, setCurrentTeamIndex]   = useState(0);
+  const [commanderIndex, setCommanderIndex]         = useState<Record<number, number>>({});
+  const [words, setWords]                           = useState<string[]>([]);
+  const [currentWordIndex, setCurrentWordIndex]     = useState(0);
+  const [roundWords, setRoundWords]                 = useState<WordResult[]>([]);
+  const [timeLeft, setTimeLeft]                     = useState(0);
+  const [isTimerRunning, setIsTimerRunning]         = useState(false);
+  const [skippedInRound, setSkippedInRound]         = useState(0);
+
+  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Play beep sound
-  const playBeep = useCallback((frequency: number = 800, duration: number = 200) => {
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext();
-      }
-      const ctx = audioCtxRef.current;
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      oscillator.frequency.value = frequency;
-      oscillator.type = 'sine';
-      gainNode.gain.value = 0.3;
-      oscillator.start();
-      oscillator.stop(ctx.currentTime + duration / 1000);
-    } catch {
-      // Audio not supported
+  // Generate lobby link when entering lobby
+  useEffect(() => {
+    if (phase === 'lobby') {
+      const id = Math.random().toString(36).slice(2, 8).toUpperCase();
+      setLobbyLink(`${window.location.origin}${window.location.pathname}?lobby=${id}`);
     }
+  }, [phase]);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(lobbyLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const playBeep = useCallback((frequency = 800, duration = 200) => {
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx  = audioCtxRef.current;
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = frequency;
+      osc.type            = 'sine';
+      gain.gain.value     = 0.3;
+      osc.start();
+      osc.stop(ctx.currentTime + duration / 1000);
+    } catch { /* ignore */ }
   }, []);
 
-  // Timer effect
   useEffect(() => {
     if (isTimerRunning && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -119,22 +176,18 @@ export default function App() {
             playBeep(400, 500);
             return 0;
           }
-          if (prev <= 6) {
-            playBeep(600, 100);
-          }
+          if (prev <= 6) playBeep(600, 100);
           return prev - 1;
         });
       }, 1000);
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isTimerRunning, timeLeft, playBeep]);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isTimerRunning, playBeep]);
 
   const addTeam = () => {
     if (teams.length >= 6) return;
-    const newId = teams.length;
-    setTeams([...teams, { id: newId, ...TEAM_PRESETS[newId], score: 0 }]);
+    const idx = teams.length;
+    setTeams([...teams, { id: idx, ...TEAM_PRESETS[idx], score: 0 }]);
   };
 
   const removeTeam = (id: number) => {
@@ -145,54 +198,32 @@ export default function App() {
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
-    const player: Player = {
-      id: Date.now().toString(),
-      name: newPlayerName.trim(),
-      teamId: null,
-    };
-    setPlayers([...players, player]);
+    setPlayers([...players, { id: Date.now().toString(), name: newPlayerName.trim(), teamId: null }]);
     setNewPlayerName('');
   };
 
-  const removePlayer = (id: string) => {
-    setPlayers(players.filter(p => p.id !== id));
-  };
+  const removePlayer = (id: string) => setPlayers(players.filter(p => p.id !== id));
 
-  const assignTeam = (playerId: string, teamId: number | null) => {
+  const assignTeam = (playerId: string, teamId: number | null) =>
     setPlayers(players.map(p => p.id === playerId ? { ...p, teamId } : p));
-  };
 
   const getTeamPlayers = (teamId: number) => players.filter(p => p.teamId === teamId);
-  const getObservers = () => players.filter(p => p.teamId === null);
+  const getObservers   = ()                => players.filter(p => p.teamId === null);
 
   const canStartGame = () => {
-    // Every team with players must have at least 2
-    const teamsWithPlayers = teams.filter(t => getTeamPlayers(t.id).length > 0);
-    if (teamsWithPlayers.length < 2) return false;
-    return teamsWithPlayers.every(t => getTeamPlayers(t.id).length >= 2);
+    const active = teams.filter(t => getTeamPlayers(t.id).length > 0);
+    if (active.length < 2) return false;
+    return active.every(t => getTeamPlayers(t.id).length >= 2);
   };
 
   const startGame = () => {
-    // Reset scores
-    setTeams(teams.map(t => ({ ...t, score: 0 })));
-    // Filter out teams with no players
     const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
-    setTeams(activeTeams);
-    // Move players from small teams to observers
-    const smallTeamPlayers = teams
-      .filter(t => getTeamPlayers(t.id).length < 2 && getTeamPlayers(t.id).length > 0)
-      .flatMap(t => getTeamPlayers(t.id));
-    if (smallTeamPlayers.length > 0) {
-      setPlayers(players.map(p =>
-        smallTeamPlayers.find(sp => sp.id === p.id) ? { ...p, teamId: null } : p
-      ));
-    }
-    // Initialize commander index for each team
+    setTeams(activeTeams.map(t => ({ ...t, score: 0 })));
+
     const cmdIdx: Record<number, number> = {};
     activeTeams.forEach(t => { cmdIdx[t.id] = 0; });
     setCommanderIndex(cmdIdx);
-    
-    // Generate words
+
     const wordPool = getWordsForDifficulty(difficulty);
     setWords(wordPool);
     setCurrentWordIndex(0);
@@ -206,79 +237,64 @@ export default function App() {
     setTimeLeft(timeLimit);
     setIsTimerRunning(true);
     setPhase('playing');
-    
-    // Ensure we have enough words
     if (currentWordIndex >= words.length - 50) {
-      const newWords = getWordsForDifficulty(difficulty);
-      setWords(prev => [...prev, ...newWords]);
+      setWords(prev => [...prev, ...getWordsForDifficulty(difficulty)]);
     }
   };
 
   const nextWord = () => {
-    const currentWord = words[currentWordIndex];
-    setRoundWords(prev => [...prev, { word: currentWord, guessed: null }]);
+    const w = words[currentWordIndex];
+    setRoundWords(prev => [...prev, { word: w, guessed: null }]);
     setCurrentWordIndex(prev => prev + 1);
   };
 
   const skipWord = () => {
     setSkippedInRound(prev => prev + 1);
-    const currentWord = words[currentWordIndex];
-    setRoundWords(prev => [...prev, { word: currentWord, guessed: false }]);
+    const w = words[currentWordIndex];
+    setRoundWords(prev => [...prev, { word: w, guessed: false }]);
     setCurrentWordIndex(prev => prev + 1);
   };
 
-  const markWord = (index: number, guessed: boolean) => {
+  const markWord = (index: number, guessed: boolean) =>
     setRoundWords(prev => prev.map((w, i) => i === index ? { ...w, guessed } : w));
-  };
 
   const finishReview = () => {
     const guessedCount = roundWords.filter(w => w.guessed === true).length;
-    const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
-    const currentTeam = activeTeams[currentTeamIndex];
-    
-    // Update score
+    const activeTeams  = teams.filter(t => getTeamPlayers(t.id).length >= 2);
+    const currentTeam  = activeTeams[currentTeamIndex];
+
     setTeams(prev => prev.map(t =>
       t.id === currentTeam.id ? { ...t, score: t.score + guessedCount } : t
     ));
-    
-    // Check for winner
-    const updatedScore = currentTeam.score + guessedCount;
-    if (updatedScore >= winScore) {
-      setTeams(prev => prev.map(t =>
-        t.id === currentTeam.id ? { ...t, score: updatedScore } : t
-      ));
-      setPhase('gameover');
-      return;
-    }
-    
-    // Advance commander
+
     const teamPlayers = getTeamPlayers(currentTeam.id);
     setCommanderIndex(prev => ({
       ...prev,
-      [currentTeam.id]: ((prev[currentTeam.id] || 0) + 1) % teamPlayers.length
+      [currentTeam.id]: ((prev[currentTeam.id] || 0) + 1) % teamPlayers.length,
     }));
-    
-    // Next team
-    const nextTeamIdx = (currentTeamIndex + 1) % activeTeams.length;
-    setCurrentTeamIndex(nextTeamIdx);
+
+    setCurrentTeamIndex((currentTeamIndex + 1) % activeTeams.length);
     setPhase('scoreboard');
   };
 
+  const getCurrentTeam      = () => {
+    const a = teams.filter(t => getTeamPlayers(t.id).length >= 2);
+    return a[currentTeamIndex] ?? null;
+  };
   const getCurrentCommander = () => {
-    const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
-    if (activeTeams.length === 0) return null;
-    const currentTeam = activeTeams[currentTeamIndex];
-    if (!currentTeam) return null;
-    const teamPlayers = getTeamPlayers(currentTeam.id);
-    if (teamPlayers.length === 0) return null;
-    const cmdIdx = commanderIndex[currentTeam.id] || 0;
-    return teamPlayers[cmdIdx % teamPlayers.length];
+    const t = getCurrentTeam();
+    if (!t) return null;
+    const pl  = getTeamPlayers(t.id);
+    const idx = commanderIndex[t.id] ?? 0;
+    return pl[idx % pl.length] ?? null;
   };
 
-  const getCurrentTeam = () => {
-    const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
-    return activeTeams[currentTeamIndex] || null;
+  const getTeamPreset = (team: Team) => {
+    const idx = TEAM_PRESETS.findIndex(p => p.name === team.name);
+    return idx >= 0 ? TEAM_PRESETS[idx] : TEAM_PRESETS[0];
   };
+
+  const allReviewed = roundWords.every(w => w.guessed !== null);
 
   const resetGame = () => {
     setPhase('setup');
@@ -293,58 +309,59 @@ export default function App() {
     setIsTimerRunning(false);
   };
 
-  const allReviewed = roundWords.every(w => w.guessed !== null);
-
-  // ============= RENDER =============
-
-  // SETUP SCREEN
+  // ═══════════════════════════════════════════
+  //  SETUP
+  // ═══════════════════════════════════════════
   if (phase === 'setup') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col items-center justify-center p-4">
-        <div className="max-w-lg w-full">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="text-6xl mb-3">🎭</div>
-            <h1 className="text-4xl font-black tracking-tight bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">
-              УГАДАЙКА
-            </h1>
-            <p className="text-gray-400 mt-2 text-sm">Объясни слово — не называя его!</p>
-          </div>
-
-          {/* Difficulty */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 mb-4 border border-gray-700">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span>🎯</span> Сложность
-            </h2>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { key: 'easy' as Difficulty, label: 'Лёгкая', emoji: '😊', desc: 'Простые слова' },
-                { key: 'medium' as Difficulty, label: 'Средняя', emoji: '🤔', desc: 'Посложнее' },
-                { key: 'hard' as Difficulty, label: 'Сложная', emoji: '🤯', desc: 'Для гигачадов' },
-              ]).map(d => (
-                <button
-                  key={d.key}
-                  onClick={() => setDifficulty(d.key)}
-                  className={`p-3 rounded-xl border-2 transition-all duration-200 ${
-                    difficulty === d.key
-                      ? 'border-yellow-400 bg-yellow-400/10 scale-105 shadow-lg shadow-yellow-400/20'
-                      : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{d.emoji}</div>
-                  <div className="font-bold text-sm">{d.label}</div>
-                  <div className="text-[10px] text-gray-400 mt-1">{d.desc}</div>
-                </button>
-              ))}
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          <div className="max-w-md w-full">
+            {/* Logo */}
+            <div className="text-center mb-10">
+              <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                УГАДАЙКА
+              </h1>
+              <p className="text-white/40 mt-2 text-sm tracking-wide">
+                Объясни слово — не называя его
+              </p>
             </div>
-          </div>
 
-          {/* Timer */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 mb-4 border border-gray-700">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span>⏱️</span> Время на раунд
-            </h2>
-            <div className="flex items-center gap-4">
+            {/* Difficulty */}
+            <Card className="p-6 mb-4">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-white/50 mb-4">
+                Сложность
+              </h2>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: 'easy'   as Difficulty, label: 'Лёгкая',  desc: 'Частые слова' },
+                  { key: 'medium' as Difficulty, label: 'Средняя', desc: 'Посложнее'    },
+                  { key: 'hard'   as Difficulty, label: 'Сложная', desc: 'Для знатоков' },
+                ]).map(d => (
+                  <button
+                    key={d.key}
+                    onClick={() => setDifficulty(d.key)}
+                    className={`p-4 rounded-xl border transition-all duration-200 text-left ${
+                      difficulty === d.key
+                        ? 'border-yellow-400 bg-yellow-400/10 shadow-lg shadow-yellow-400/10'
+                        : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="font-bold text-sm mb-1">{d.label}</div>
+                    <div className="text-[11px] text-white/40">{d.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+            {/* Timer */}
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold uppercase tracking-widest text-white/50">
+                  Время раунда
+                </h2>
+                <span className="font-mono font-black text-yellow-400 text-xl">{timeLimit}с</span>
+              </div>
               <input
                 type="range"
                 min={20}
@@ -352,513 +369,547 @@ export default function App() {
                 step={5}
                 value={timeLimit}
                 onChange={e => setTimeLimit(Number(e.target.value))}
-                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-yellow-400 bg-gray-600"
+                className="w-full cursor-pointer"
               />
-              <div className="bg-gray-700 rounded-xl px-4 py-2 min-w-[70px] text-center font-mono font-bold text-yellow-400 text-lg">
-                {timeLimit}с
+              <div className="flex justify-between text-[11px] text-white/30 mt-2">
+                <span>20с</span>
+                <span>180с</span>
               </div>
-            </div>
-          </div>
+            </Card>
 
-          {/* Win score */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 mb-6 border border-gray-700">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <span>🏆</span> Очки для победы
-            </h2>
-            <div className="flex items-center gap-4">
-              <input
-                type="range"
-                min={10}
-                max={100}
-                step={5}
-                value={winScore}
-                onChange={e => setWinScore(Number(e.target.value))}
-                className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-yellow-400 bg-gray-600"
-              />
-              <div className="bg-gray-700 rounded-xl px-4 py-2 min-w-[70px] text-center font-mono font-bold text-yellow-400 text-lg">
-                {winScore}
-              </div>
-            </div>
+            <button
+              onClick={() => setPhase('lobby')}
+              className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black text-lg rounded-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/20"
+            >
+              СОЗДАТЬ ЛОББИ
+            </button>
           </div>
-
-          <button
-            onClick={() => setPhase('lobby')}
-            className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-black text-lg rounded-2xl transition-all duration-200 transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/30"
-          >
-            СОЗДАТЬ ЛОББИ 🚀
-          </button>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
-  // LOBBY SCREEN
+  // ═══════════════════════════════════════════
+  //  LOBBY
+  // ═══════════════════════════════════════════
   if (phase === 'lobby') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-6">
-            <h1 className="text-3xl font-black bg-gradient-to-r from-yellow-400 to-pink-500 bg-clip-text text-transparent">
-              🎭 ЛОББИ
-            </h1>
-            <div className="flex justify-center gap-3 mt-2 text-xs text-gray-400">
-              <span>⏱️ {timeLimit}с</span>
-              <span>•</span>
-              <span>🎯 {difficulty === 'easy' ? 'Лёгкая' : difficulty === 'medium' ? 'Средняя' : 'Сложная'}</span>
-              <span>•</span>
-              <span>🏆 {winScore} очков</span>
+      <PageLayout>
+        <div className="p-4 pb-8">
+          <div className="max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="text-center py-6">
+              <h1 className="text-3xl font-black bg-gradient-to-r from-yellow-300 to-pink-400 bg-clip-text text-transparent">
+                ЛОББИ
+              </h1>
+              <div className="flex justify-center gap-4 mt-2 text-xs text-white/40">
+                <span>{timeLimit}с</span>
+                <span>·</span>
+                <span>
+                  {difficulty === 'easy' ? 'Лёгкая' : difficulty === 'medium' ? 'Средняя' : 'Сложная'}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Add player */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-4 mb-4 border border-gray-700">
-            <h2 className="font-bold mb-3 flex items-center gap-2">
-              <span>👤</span> Добавить игрока
-            </h2>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newPlayerName}
-                onChange={e => setNewPlayerName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addPlayer()}
-                placeholder="Введи имя..."
-                className="flex-1 bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition"
-                maxLength={20}
-              />
+            {/* Lobby link */}
+            <Card className="p-5 mb-4">
+              <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
+                Ссылка на лобби
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-mono text-sm text-white/70 truncate select-all">
+                  {lobbyLink}
+                </div>
+                <button
+                  onClick={copyLink}
+                  className={`px-5 py-3 rounded-xl font-bold text-sm transition-all active:scale-95 whitespace-nowrap ${
+                    linkCopied
+                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
+                      : 'bg-white/10 hover:bg-white/15 text-white'
+                  }`}
+                >
+                  {linkCopied ? 'Скопировано!' : 'Копировать'}
+                </button>
+              </div>
+              <p className="text-[11px] text-white/30 mt-2">
+                Отправь эту ссылку друзьям — они попадут в то же лобби
+              </p>
+            </Card>
+
+            {/* Add player */}
+            <Card className="p-5 mb-4">
+              <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
+                Добавить игрока
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newPlayerName}
+                  onChange={e => setNewPlayerName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addPlayer()}
+                  placeholder="Введи имя..."
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-yellow-400/60 transition"
+                  maxLength={20}
+                />
+                <button
+                  onClick={addPlayer}
+                  disabled={!newPlayerName.trim()}
+                  className="px-6 py-3 bg-yellow-400 hover:bg-yellow-300 disabled:bg-white/10 disabled:text-white/30 text-black font-black rounded-xl transition-all active:scale-95"
+                >
+                  +
+                </button>
+              </div>
+            </Card>
+
+            {/* Observers */}
+            {getObservers().length > 0 && (
+              <Card className="p-5 mb-4">
+                <div className="text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
+                  Наблюдатели ({getObservers().length})
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {getObservers().map(p => (
+                    <div key={p.id} className="bg-white/8 border border-white/10 rounded-xl px-3 py-2 flex items-center gap-2 text-sm group">
+                      <span>{p.name}</span>
+                      <button
+                        onClick={() => removePlayer(p.id)}
+                        className="text-white/30 hover:text-red-400 transition text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Teams */}
+            <div className="space-y-3 mb-4">
+              {teams.map((team) => {
+                const p = getTeamPreset(team);
+                const tp = getTeamPlayers(team.id);
+                const tooFew = tp.length > 0 && tp.length < 2;
+                return (
+                  <div
+                    key={team.id}
+                    className={`rounded-2xl p-5 border-2 transition-all ${p.bg} ${p.border}`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className={`font-black text-base flex items-center gap-2 ${p.text}`}>
+                        <span
+                          className="inline-block w-3 h-3 rounded-full"
+                          style={{ background: p.accent }}
+                        />
+                        {team.name}
+                        <span className="text-xs text-white/30 font-normal">
+                          {tp.length} игр.
+                        </span>
+                      </h3>
+                      {teams.length > 2 && (
+                        <button
+                          onClick={() => removeTeam(team.id)}
+                          className="text-white/30 hover:text-red-400 text-xs transition"
+                        >
+                          Убрать
+                        </button>
+                      )}
+                    </div>
+
+                    {tooFew && (
+                      <div className="text-xs text-red-400 mb-3 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                        Нужно минимум 2 игрока в команде
+                      </div>
+                    )}
+
+                    {/* Team members */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {tp.map(pl => (
+                        <div key={pl.id} className="bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2 text-sm">
+                          <span>{pl.name}</span>
+                          <button
+                            onClick={() => assignTeam(pl.id, null)}
+                            className="text-white/30 hover:text-white transition text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Add from observers */}
+                    {getObservers().length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {getObservers().map(pl => (
+                          <button
+                            key={pl.id}
+                            onClick={() => assignTeam(pl.id, team.id)}
+                            className={`text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95 text-white ${p.btn}`}
+                          >
+                            + {pl.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add team */}
+            {teams.length < 6 && (
               <button
-                onClick={addPlayer}
-                disabled={!newPlayerName.trim()}
-                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-600 disabled:text-gray-400 text-black font-bold rounded-xl transition-all active:scale-95"
+                onClick={addTeam}
+                className="w-full py-3 border border-dashed border-white/15 rounded-2xl text-white/40 hover:border-white/25 hover:text-white/60 transition-all mb-5 flex items-center justify-center gap-2 text-sm"
               >
-                +
+                + Добавить команду
+              </button>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPhase('setup')}
+                className="px-5 py-4 bg-white/8 hover:bg-white/12 rounded-2xl font-bold transition-all text-sm"
+              >
+                Назад
+              </button>
+              <button
+                onClick={startGame}
+                disabled={!canStartGame()}
+                className="flex-1 py-4 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-300 hover:to-emerald-400 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-black font-black text-base rounded-2xl transition-all transform hover:scale-[1.01] active:scale-95 shadow-lg shadow-green-500/20 disabled:shadow-none"
+              >
+                {canStartGame() ? 'НАЧАТЬ ИГРУ' : 'Нужно минимум 2 команды по 2 игрока'}
               </button>
             </div>
           </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
-          {/* Observers */}
-          {getObservers().length > 0 && (
-            <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-4 mb-4 border border-gray-700">
-              <h2 className="font-bold mb-3 flex items-center gap-2">
-                <span>👀</span> Наблюдатели
-                <span className="text-xs text-gray-400 font-normal ml-1">({getObservers().length})</span>
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {getObservers().map(p => (
-                  <div key={p.id} className="bg-gray-700 rounded-xl px-3 py-2 flex items-center gap-2 group">
-                    <span className="text-sm">{p.name}</span>
+  // ═══════════════════════════════════════════
+  //  SCOREBOARD
+  // ═══════════════════════════════════════════
+  if (phase === 'scoreboard') {
+    const currentTeam = getCurrentTeam();
+    const commander   = getCurrentCommander();
+    const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
+    const maxScore    = Math.max(...activeTeams.map(t => t.score), 1);
+
+    return (
+      <PageLayout>
+        <div className="flex flex-col min-h-screen p-4">
+          <div className="max-w-lg mx-auto w-full flex-1 flex flex-col py-6">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-black tracking-wide text-white/80 uppercase">
+                Табло
+              </h1>
+            </div>
+
+            {/* Scores */}
+            <div className="space-y-3 mb-8 flex-1">
+              {activeTeams.map(team => {
+                const p         = getTeamPreset(team);
+                const isCurrent = currentTeam?.id === team.id;
+                const pct       = (team.score / maxScore) * 100;
+                return (
+                  <div
+                    key={team.id}
+                    className={`rounded-2xl p-4 border-2 transition-all ${
+                      isCurrent
+                        ? `${p.bg} ${p.border} shadow-lg`
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: p.accent }} />
+                        <span className="font-bold">{team.name}</span>
+                        {isCurrent && (
+                          <span className="text-[11px] bg-yellow-400/20 text-yellow-400 border border-yellow-400/30 px-2 py-0.5 rounded-full animate-pulse">
+                            Ходит
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-2xl font-black ${p.text}`}>{team.score}</span>
+                    </div>
+                    <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${p.color} rounded-full transition-all duration-700`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Current turn */}
+            {currentTeam && commander && (
+              <Card className="p-6 mb-6 text-center">
+                <div className="text-xs uppercase tracking-widest text-white/40 mb-3">Сейчас ходят</div>
+                <div className="text-2xl font-black mb-4" style={{ color: getTeamPreset(currentTeam).accent }}>
+                  {currentTeam.name}
+                </div>
+                <div className="text-xs text-white/40 mb-1 uppercase tracking-widest">Командир</div>
+                <div className="text-xl font-black text-yellow-400">{commander.name}</div>
+                <div className="text-xs text-white/30 mt-4 leading-relaxed">
+                  Командир объясняет слова голосом.<br/>Остальные — угадывают.
+                </div>
+              </Card>
+            )}
+
+            <button
+              onClick={startRound}
+              className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-black text-lg rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/20"
+            >
+              НАЧАТЬ РАУНД
+            </button>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  PLAYING
+  // ═══════════════════════════════════════════
+  if (phase === 'playing') {
+    const currentTeam = getCurrentTeam();
+    const commander   = getCurrentCommander();
+    const currentWord = words[currentWordIndex] || 'Слова закончились';
+    const minutes     = Math.floor(timeLeft / 60);
+    const seconds     = timeLeft % 60;
+    const pct         = (timeLeft / timeLimit) * 100;
+    const timerColor  = timeLeft <= 10 ? '#ef4444' : timeLeft <= 20 ? '#f59e0b' : '#22c55e';
+    const p           = currentTeam ? getTeamPreset(currentTeam) : TEAM_PRESETS[0];
+
+    return (
+      <PageLayout>
+        <div className="flex flex-col min-h-screen p-4">
+          <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
+
+            {/* Timer bar */}
+            <div className="pt-4 pb-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-sm">
+                  {currentTeam && (
+                    <span className="font-bold" style={{ color: p.accent }}>{currentTeam.name}</span>
+                  )}
+                  <span className="text-white/30">·</span>
+                  <span className="text-white/60">{commander?.name}</span>
+                </div>
+                <div
+                  className={`font-mono font-black text-2xl transition-colors ${timeLeft <= 10 ? 'animate-pulse' : ''}`}
+                  style={{ color: timerColor }}
+                >
+                  {minutes}:{seconds.toString().padStart(2, '0')}
+                </div>
+              </div>
+              <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-1000"
+                  style={{ width: `${pct}%`, background: timerColor }}
+                />
+              </div>
+            </div>
+
+            <div className="text-center text-xs text-white/30 mt-2 mb-3">
+              Слово #{roundWords.length + 1} &nbsp;·&nbsp; Пропущено: {skippedInRound}
+            </div>
+
+            {/* Word card */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <Card className="w-full p-10 text-center border-white/15 mb-6">
+                <div className="text-[11px] uppercase tracking-widest text-white/30 mb-6">
+                  Объясни это слово
+                </div>
+                <div className="text-5xl sm:text-6xl font-black text-white leading-tight break-words mb-4">
+                  {currentWord}
+                </div>
+                <div className="text-[11px] text-white/20">
+                  {difficulty === 'easy' ? 'Лёгкая' : difficulty === 'medium' ? 'Средняя' : 'Сложная'}
+                </div>
+              </Card>
+            </div>
+
+            {/* Past words */}
+            {roundWords.length > 0 && (
+              <div className="mb-4 max-h-28 overflow-y-auto">
+                <div className="text-[11px] text-white/30 mb-1.5 uppercase tracking-widest">
+                  Прошедшие слова
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {roundWords.map((w, i) => (
+                    <span
+                      key={i}
+                      className={`text-xs px-2.5 py-1 rounded-lg ${
+                        w.guessed === false
+                          ? 'bg-red-500/15 text-red-400 line-through'
+                          : 'bg-white/8 text-white/60'
+                      }`}
+                    >
+                      {w.word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div className="grid grid-cols-2 gap-3 pb-4">
+              <button
+                onClick={skipWord}
+                className="py-5 bg-white/8 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 rounded-2xl font-bold text-base transition-all active:scale-95 text-white/80"
+              >
+                Пропустить
+              </button>
+              <button
+                onClick={nextWord}
+                className="py-5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 rounded-2xl font-black text-base transition-all active:scale-95 text-white shadow-lg shadow-green-500/20"
+              >
+                Угадали
+              </button>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  REVIEW
+  // ═══════════════════════════════════════════
+  if (phase === 'review') {
+    const currentTeam  = getCurrentTeam();
+    const guessedCount = roundWords.filter(w => w.guessed === true).length;
+    const p            = currentTeam ? getTeamPreset(currentTeam) : TEAM_PRESETS[0];
+
+    return (
+      <PageLayout>
+        <div className="flex flex-col min-h-screen p-4">
+          <div className="max-w-lg mx-auto w-full flex-1 flex flex-col py-6">
+
+            <div className="text-center mb-6">
+              <div className="inline-block bg-red-500/15 border border-red-500/30 rounded-2xl px-6 py-3 mb-4">
+                <span className="text-red-400 font-black text-lg tracking-wide">ВРЕМЯ ВЫШЛО</span>
+              </div>
+              {currentTeam && (
+                <div className="font-bold" style={{ color: p.accent }}>
+                  {currentTeam.name} — проверка
+                </div>
+              )}
+            </div>
+
+            <div className="text-center mb-6">
+              <span className="text-4xl font-black text-yellow-400">+{guessedCount}</span>
+              <span className="text-white/40 text-sm ml-2">очков</span>
+            </div>
+
+            <div className="flex-1 space-y-2 mb-6 overflow-y-auto">
+              {roundWords.length === 0 && (
+                <div className="text-center text-white/30 py-10">Ни одного слова в этом раунде</div>
+              )}
+              {roundWords.map((w, i) => (
+                <div
+                  key={i}
+                  className={`rounded-xl p-3.5 border-2 flex items-center justify-between transition-all ${
+                    w.guessed === true
+                      ? 'bg-green-500/8 border-green-500/50'
+                      : w.guessed === false
+                      ? 'bg-red-500/8 border-red-500/50'
+                      : 'bg-white/5 border-white/10'
+                  }`}
+                >
+                  <span className={`font-bold ${w.guessed === false ? 'line-through text-white/30' : ''}`}>
+                    {w.word}
+                  </span>
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => removePlayer(p.id)}
-                      className="text-gray-500 hover:text-red-400 transition opacity-60 group-hover:opacity-100"
+                      onClick={() => markWord(i, true)}
+                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all active:scale-90 ${
+                        w.guessed === true
+                          ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
+                          : 'bg-white/8 hover:bg-green-500/30 text-white/50 hover:text-green-400'
+                      }`}
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={() => markWord(i, false)}
+                      className={`w-10 h-10 rounded-xl font-bold text-sm transition-all active:scale-90 ${
+                        w.guessed === false
+                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                          : 'bg-white/8 hover:bg-red-500/30 text-white/50 hover:text-red-400'
+                      }`}
                     >
                       ✕
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Teams */}
-          <div className="space-y-3 mb-4">
-            {teams.map((team, idx) => {
-              const teamPlayers = getTeamPlayers(team.id);
-              const tooFew = teamPlayers.length > 0 && teamPlayers.length < 2;
-              return (
-                <div
-                  key={team.id}
-                  className={`rounded-2xl p-4 border-2 transition-all ${TEAM_BG[idx] || 'bg-gray-700/50 border-gray-600'}`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className={`font-bold flex items-center gap-2 ${TEAM_TEXT[idx]}`}>
-                      <span>{team.emoji}</span>
-                      {team.name}
-                      <span className="text-xs text-gray-400 font-normal">({teamPlayers.length})</span>
-                    </h3>
-                    {teams.length > 2 && (
-                      <button
-                        onClick={() => removeTeam(team.id)}
-                        className="text-gray-500 hover:text-red-400 text-sm transition"
-                      >
-                        Убрать
-                      </button>
-                    )}
-                  </div>
-                  
-                  {tooFew && (
-                    <div className="text-xs text-red-400 mb-2 flex items-center gap-1">
-                      ⚠️ Нужно минимум 2 игрока в команде!
-                    </div>
-                  )}
-
-                  {/* Team players */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {teamPlayers.map(p => (
-                      <div key={p.id} className="bg-black/30 rounded-lg px-3 py-1.5 flex items-center gap-2 text-sm">
-                        <span>{p.name}</span>
-                        <button
-                          onClick={() => assignTeam(p.id, null)}
-                          className="text-gray-500 hover:text-white transition text-xs"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Add players to team */}
-                  {getObservers().length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {getObservers().map(p => (
-                        <button
-                          key={p.id}
-                          onClick={() => assignTeam(p.id, team.id)}
-                          className={`text-xs px-3 py-1.5 rounded-lg transition-all active:scale-95 text-white ${TEAM_BTN[idx] || 'bg-gray-600 hover:bg-gray-500'}`}
-                        >
-                          + {p.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
 
-          {/* Add team button */}
-          {teams.length < 6 && (
             <button
-              onClick={addTeam}
-              className="w-full py-3 border-2 border-dashed border-gray-600 rounded-2xl text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-all mb-6 flex items-center justify-center gap-2"
+              onClick={finishReview}
+              disabled={!allReviewed && roundWords.length > 0}
+              className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30 text-black font-black text-lg rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/20 disabled:shadow-none"
             >
-              <span className="text-xl">+</span> Добавить команду
-            </button>
-          )}
-
-          {/* Start button */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => setPhase('setup')}
-              className="px-6 py-4 bg-gray-700 hover:bg-gray-600 rounded-2xl font-bold transition-all"
-            >
-              ← Назад
-            </button>
-            <button
-              onClick={startGame}
-              disabled={!canStartGame()}
-              className="flex-1 py-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 disabled:from-gray-600 disabled:to-gray-600 disabled:text-gray-400 text-black font-black text-lg rounded-2xl transition-all transform hover:scale-[1.01] active:scale-95 shadow-lg shadow-green-500/30 disabled:shadow-none"
-            >
-              {canStartGame() ? 'НАЧАТЬ ИГРУ 🎮' : 'Нужно минимум 2 команды по 2 игрока'}
+              {allReviewed || roundWords.length === 0 ? 'ДАЛЕЕ' : 'Отметьте все слова'}
             </button>
           </div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
-  // SCOREBOARD (between rounds)
-  if (phase === 'scoreboard') {
-    const currentTeam = getCurrentTeam();
-    const commander = getCurrentCommander();
-    const activeTeams = teams.filter(t => getTeamPlayers(t.id).length >= 2);
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 flex flex-col">
-        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
-          {/* Title */}
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-black bg-gradient-to-r from-yellow-400 to-pink-500 bg-clip-text text-transparent">
-              📊 ТАБЛО
-            </h1>
-          </div>
-
-          {/* Scores */}
-          <div className="space-y-3 mb-6 flex-1">
-            {activeTeams.map((team, idx) => {
-              const origIdx = TEAM_PRESETS.findIndex(p => p.name === team.name);
-              const colorIdx = origIdx >= 0 ? origIdx : idx;
-              const isCurrentTeam = currentTeam?.id === team.id;
-              const progressPercent = Math.min((team.score / winScore) * 100, 100);
-              return (
-                <div
-                  key={team.id}
-                  className={`rounded-2xl p-4 border-2 transition-all ${
-                    isCurrentTeam ? `${TEAM_BG[colorIdx]} scale-[1.02] shadow-lg` : 'bg-gray-800/30 border-gray-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{team.emoji}</span>
-                      <span className="font-bold">{team.name}</span>
-                      {isCurrentTeam && (
-                        <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full animate-pulse">
-                          Ходит!
-                        </span>
-                      )}
-                    </div>
-                    <div className={`text-2xl font-black ${TEAM_TEXT[colorIdx]}`}>
-                      {team.score}
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full bg-gradient-to-r ${team.color} transition-all duration-500 rounded-full`}
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <div className="text-[10px] text-gray-500 mt-1 text-right">{team.score}/{winScore}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Current turn info */}
-          {currentTeam && commander && (
-            <div className="bg-gray-800/50 backdrop-blur rounded-2xl p-6 mb-6 border border-gray-700 text-center">
-              <div className="text-sm text-gray-400 mb-2">Сейчас ходят</div>
-              <div className="text-2xl font-bold mb-3">
-                {currentTeam.emoji} {currentTeam.name}
-              </div>
-              <div className="text-sm text-gray-400 mb-1">Командир</div>
-              <div className="text-xl font-bold text-yellow-400 flex items-center justify-center gap-2">
-                👑 {commander.name}
-              </div>
-              <div className="text-xs text-gray-500 mt-3">
-                Командир объясняет слова, остальная команда угадывает!
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={startRound}
-            className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-black text-lg rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/30"
-          >
-            НАЧАТЬ РАУНД ▶️
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // PLAYING
-  if (phase === 'playing') {
-    const currentTeam = getCurrentTeam();
-    const commander = getCurrentCommander();
-    const currentWord = words[currentWordIndex] || 'Слова закончились!';
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 flex flex-col">
-        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
-          {/* Timer bar */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-sm">
-                {currentTeam && (
-                  <>
-                    <span>{currentTeam.emoji}</span>
-                    <span className="font-bold">{currentTeam.name}</span>
-                  </>
-                )}
-                <span className="text-gray-500">•</span>
-                <span className="text-yellow-400">👑 {commander?.name}</span>
-              </div>
-              <div className={`font-mono font-black text-2xl ${timeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-yellow-400'}`}>
-                {minutes}:{seconds.toString().padStart(2, '0')}
-              </div>
-            </div>
-            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-1000 rounded-full ${
-                  timeLeft <= 10 ? 'bg-red-500' : timeLeft <= 20 ? 'bg-yellow-500' : 'bg-green-500'
-                }`}
-                style={{ width: `${(timeLeft / timeLimit) * 100}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Word count */}
-          <div className="text-center text-xs text-gray-500 mb-2">
-            Слово #{roundWords.length + 1} • Пропущено: {skippedInRound}
-          </div>
-
-          {/* CURRENT WORD - big and centered */}
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="bg-gray-800/80 backdrop-blur rounded-3xl p-8 border border-gray-600 shadow-2xl w-full text-center mb-6">
-              <div className="text-xs text-gray-400 mb-4 uppercase tracking-widest">Объясни это слово</div>
-              <div className="text-4xl sm:text-5xl font-black text-white mb-2 break-words">
-                {currentWord}
-              </div>
-              <div className="text-xs text-gray-500 mt-4">
-                {difficulty === 'easy' ? '😊 Лёгкая' : difficulty === 'medium' ? '🤔 Средняя' : '🤯 Сложная'}
-              </div>
-            </div>
-          </div>
-
-          {/* Past words in this round */}
-          {roundWords.length > 0 && (
-            <div className="mb-4 max-h-32 overflow-y-auto">
-              <div className="text-xs text-gray-500 mb-1">Прошедшие слова:</div>
-              <div className="flex flex-wrap gap-1">
-                {roundWords.map((w, i) => (
-                  <span key={i} className={`text-xs px-2 py-1 rounded-lg ${
-                    w.guessed === false ? 'bg-red-500/20 text-red-400 line-through' : 'bg-gray-700 text-gray-300'
-                  }`}>
-                    {w.word}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={skipWord}
-              className="py-4 bg-red-600/80 hover:bg-red-600 rounded-2xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              ⏭️ Пропустить
-            </button>
-            <button
-              onClick={nextWord}
-              className="py-4 bg-green-600/80 hover:bg-green-600 rounded-2xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              ✅ Угадали!
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // REVIEW
-  if (phase === 'review') {
-    const currentTeam = getCurrentTeam();
-    const guessedCount = roundWords.filter(w => w.guessed === true).length;
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 flex flex-col">
-        <div className="max-w-lg mx-auto w-full flex-1 flex flex-col">
-          <div className="text-center mb-6">
-            <div className="text-4xl mb-2">⏰</div>
-            <h1 className="text-2xl font-black text-red-400">ВРЕМЯ ВЫШЛО!</h1>
-            {currentTeam && (
-              <p className="text-gray-400 mt-1">
-                {currentTeam.emoji} {currentTeam.name} — проверка слов
-              </p>
-            )}
-          </div>
-
-          <div className="text-center mb-4">
-            <span className="text-3xl font-black text-yellow-400">+{guessedCount}</span>
-            <span className="text-gray-400 text-sm ml-2">очков</span>
-          </div>
-
-          {/* Words to review */}
-          <div className="flex-1 space-y-2 mb-6 overflow-y-auto">
-            {roundWords.length === 0 && (
-              <div className="text-center text-gray-500 py-8">Слов не было в этом раунде</div>
-            )}
-            {roundWords.map((w, i) => (
-              <div
-                key={i}
-                className={`rounded-xl p-3 border-2 flex items-center justify-between transition-all ${
-                  w.guessed === true
-                    ? 'bg-green-500/10 border-green-500'
-                    : w.guessed === false
-                    ? 'bg-red-500/10 border-red-500'
-                    : 'bg-gray-800/50 border-gray-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">
-                    {w.guessed === true ? '✅' : w.guessed === false ? '❌' : '❓'}
-                  </span>
-                  <span className={`font-bold ${w.guessed === false ? 'line-through text-gray-500' : ''}`}>
-                    {w.word}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => markWord(i, true)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                      w.guessed === true
-                        ? 'bg-green-500 text-white shadow-lg shadow-green-500/30'
-                        : 'bg-gray-700 hover:bg-green-500/50 text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    ✓
-                  </button>
-                  <button
-                    onClick={() => markWord(i, false)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
-                      w.guessed === false
-                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                        : 'bg-gray-700 hover:bg-red-500/50 text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={finishReview}
-            disabled={!allReviewed && roundWords.length > 0}
-            className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 disabled:from-gray-600 disabled:to-gray-600 disabled:text-gray-400 text-black font-black text-lg rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-orange-500/30 disabled:shadow-none"
-          >
-            {allReviewed || roundWords.length === 0 ? 'ДАЛЕЕ →' : 'Отметьте все слова ✓ или ✕'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // GAME OVER
+  // ═══════════════════════════════════════════
+  //  GAME OVER (manual reset only, no win condition)
+  // ═══════════════════════════════════════════
   if (phase === 'gameover') {
-    const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
-    const winner = sortedTeams[0];
+    const sorted = [...teams].sort((a, b) => b.score - a.score);
+    const winner = sorted[0];
+    const p      = winner ? getTeamPreset(winner) : TEAM_PRESETS[0];
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-4 flex flex-col items-center justify-center">
-        <div className="max-w-lg w-full text-center">
-          <div className="text-6xl mb-4">🏆</div>
-          <h1 className="text-3xl font-black mb-2">ПОБЕДА!</h1>
-          {winner && (
-            <>
-              <div className="text-4xl font-black bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">
-                {winner.emoji} {winner.name}
-              </div>
-              <div className="text-5xl font-black text-yellow-400 mb-8">
-                {winner.score} очков
-              </div>
-            </>
-          )}
-
-          <div className="space-y-3 mb-8">
-            {sortedTeams.map((team, i) => (
-              <div key={team.id} className="bg-gray-800/50 rounded-xl p-4 flex items-center justify-between border border-gray-700">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-gray-500">#{i + 1}</span>
-                  <span className="text-xl">{team.emoji}</span>
-                  <span className="font-bold">{team.name}</span>
+      <PageLayout>
+        <div className="flex flex-col min-h-screen items-center justify-center p-4">
+          <div className="max-w-lg w-full text-center">
+            <div className="text-5xl font-black mb-2 tracking-tight bg-gradient-to-r from-yellow-300 to-orange-400 bg-clip-text text-transparent">
+              ПОБЕДА!
+            </div>
+            {winner && (
+              <div className="mb-8">
+                <div className="text-2xl font-black mb-1" style={{ color: p.accent }}>
+                  {winner.name}
                 </div>
-                <span className="text-xl font-black">{team.score}</span>
+                <div className="text-5xl font-black text-yellow-400">{winner.score}</div>
+                <div className="text-white/30 text-sm">очков</div>
               </div>
-            ))}
+            )}
+            <div className="space-y-3 mb-8">
+              {sorted.map((team, i) => {
+                const tp = getTeamPreset(team);
+                return (
+                  <Card key={team.id} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-white/30 font-bold w-6">#{i + 1}</span>
+                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: tp.accent }} />
+                      <span className="font-bold">{team.name}</span>
+                    </div>
+                    <span className="text-xl font-black">{team.score}</span>
+                  </Card>
+                );
+              })}
+            </div>
+            <button
+              onClick={resetGame}
+              className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-black text-lg rounded-2xl transition-all active:scale-95"
+            >
+              НОВАЯ ИГРА
+            </button>
           </div>
-
-          <button
-            onClick={resetGame}
-            className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-black text-lg rounded-2xl transition-all active:scale-95"
-          >
-            НОВАЯ ИГРА 🔄
-          </button>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
