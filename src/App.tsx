@@ -212,8 +212,6 @@ export default function App() {
     setPhase('lobby');
   };
 
-  const removePlayer = (id: string) => setPlayers(players.filter(p => p.id !== id));
-
   const assignTeam = (playerId: string, teamId: number | null) =>
     setPlayers(players.map(p => p.id === playerId ? { ...p, teamId } : p));
 
@@ -524,14 +522,8 @@ export default function App() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {getObservers().map(p => (
-                    <div key={p.id} className="bg-white/8 border border-white/10 rounded-xl px-3 py-2 flex items-center gap-2 text-sm group">
+                    <div key={p.id} className="bg-white/8 border border-white/10 rounded-xl px-3 py-2 text-sm">
                       <span>{p.name}</span>
-                      <button
-                        onClick={() => removePlayer(p.id)}
-                        className="text-white/30 hover:text-red-400 transition text-xs"
-                      >
-                        ✕
-                      </button>
                     </div>
                   ))}
                 </div>
@@ -579,14 +571,8 @@ export default function App() {
                     {/* Team members */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {tp.map(pl => (
-                        <div key={pl.id} className="bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2 text-sm">
+                        <div key={pl.id} className="bg-black/20 border border-white/10 rounded-lg px-3 py-1.5 text-sm">
                           <span>{pl.name}</span>
-                          <button
-                            onClick={() => assignTeam(pl.id, null)}
-                            className="text-white/30 hover:text-white transition text-xs"
-                          >
-                            ✕
-                          </button>
                         </div>
                       ))}
                     </div>
